@@ -6,7 +6,7 @@ export default function EditStudentModal({ isOpen, onClose, onSave, student }) {
   const [form, setForm] = useState({
     first_name: '', last_name: '', program: 'Full-Time',
     start_date: '', required_hours: 1500,
-    theory_hours: 0, clinical_hours: 0, pin: '',
+    theory_hours: 0, clinical_hours: 0, de_hours: 0, pin: '',
   });
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
@@ -21,6 +21,7 @@ export default function EditStudentModal({ isOpen, onClose, onSave, student }) {
         required_hours: student.required_hours,
         theory_hours: Number(student.theory_hours),
         clinical_hours: Number(student.clinical_hours),
+        de_hours: Number(student.de_hours) || 0,
         pin: student.pin,
       });
     }
@@ -82,6 +83,10 @@ export default function EditStudentModal({ isOpen, onClose, onSave, student }) {
           <label className="form-label">Clinical Hours</label>
           <input type="number" value={form.clinical_hours} onChange={e => set('clinical_hours', parseFloat(e.target.value) || 0)} />
         </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Distance Education Hours</label>
+        <input type="number" value={form.de_hours} min={0} step={0.5} onChange={e => set('de_hours', parseFloat(e.target.value) || 0)} />
       </div>
       <div className="form-group">
         <label className="form-label">Kiosk PIN <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: 12 }}>(4 digits)</span></label>
