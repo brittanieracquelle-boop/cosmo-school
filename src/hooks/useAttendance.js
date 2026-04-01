@@ -44,5 +44,22 @@ export function useAttendance() {
     return { error };
   }
 
-  return { logs, loading, refetch: fetch, clockIn, clockOut };
+  async function update(id, updates) {
+    if (updates.clock_in && updates.clock_out) {
+      const [ih, im] = updates.clock_in.split(':').map(Number);
+      const [oh, om] = updates.clock_out.split(':').map(Number);
+      updates.hours = parseFloat(((oh * 60 + om - ih * 60 - im) / 60).toFixed(2));
+    }
+    const { error } = await supabase.from('attendance_log').update(updates).eq('id', id);
+    if (!error) await fetch();
+    return { error };
+  }
+
+  async function remove(id) {
+    const { error } = await supabase.from('attendance_log').delete().eq('id', id);
+    if (!error) await fetch();
+    return { error };
+  }
+
+  return { logs, loading, refetch: fetch, clockIn, clockOut, update, remove };
 }

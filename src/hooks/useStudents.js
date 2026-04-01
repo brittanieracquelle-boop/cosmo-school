@@ -29,5 +29,11 @@ export function useStudents() {
     return { error };
   }
 
-  return { students, loading, refetch: fetch, create, update };
+  async function remove(id) {
+    const { error } = await supabase.from('students').delete().eq('id', id);
+    if (!error) await fetch();
+    return { error };
+  }
+
+  return { students, loading, refetch: fetch, create, update, remove };
 }

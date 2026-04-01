@@ -3,6 +3,7 @@ import { useLiveClock } from '../../hooks/useLiveClock';
 import { useStudents } from '../../hooks/useStudents';
 import { useAttendance } from '../../hooks/useAttendance';
 import EmptyState from '../../components/ui/EmptyState';
+import EditTimeCardModal from '../../components/modals/EditTimeCardModal';
 import { fullName, initials, formatTime } from '../../lib/helpers';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -10,9 +11,10 @@ import toast from 'react-hot-toast';
 export default function TimeClock() {
   const now = useLiveClock();
   const { students } = useStudents();
-  const { logs, clockIn, clockOut } = useAttendance();
+  const { logs, clockIn, clockOut, update, remove } = useAttendance();
   const [selectedStudent, setSelectedStudent] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [editEntry, setEditEntry] = useState(null);
   const navigate = useNavigate();
 
   const today = new Date().toISOString().split('T')[0];
@@ -88,10 +90,10 @@ export default function TimeClock() {
         <div className="card-header"><div className="card-title">Today's Attendance Log</div></div>
         <div className="card-body" style={{ padding: 0 }}>
           <table>
-            <thead><tr><th>Student</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Status</th></tr></thead>
+            <thead><tr><th>Student</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               {todayLogs.length === 0 ? (
-                <EmptyState colSpan={5} message="No attendance recorded today" />
+                <EmptyState colSpan={6} message="No attendance recorded today" />
               ) : (
                 todayLogs.map(a => {
                   const s = students.find(st => st.id === a.student_id);
@@ -108,6 +110,12 @@ export default function TimeClock() {
                       <td>{a.clock_out ? formatTime(a.clock_out) : '--'}</td>
                       <td>{a.clock_out ? `${Number(a.hours).toFixed(2)} hrs` : '--'}</td>
                       <td>{a.clock_out ? <span className="badge badge-muted">Clocked Out</span> : <span className="clocked-in-indicator"><span className="dot pulse"></span> In Session</span>}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setEditEntry(a)}>Edit</button>
+                          <button className="btn btn-sm" style={{ background: 'var(--error-light)', color: 'var(--error)' }} onClick={async () => { if (confirm('Delete this time card entry?')) { await remove(a.id); toast.success('Entry deleted'); } }}>Delete</button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
@@ -116,6 +124,13 @@ export default function TimeClock() {
           </table>
         </div>
       </div>
+
+      <EditTimeCardModal
+        isOpen={!!editEntry}
+        onClose={() => setEditEntry(null)}
+        onSave={async (id, updates) => { await update(id, updates); toast.success('Time card updated'); }}
+        entry={editEntry}
+      />
     </>
   );
 }

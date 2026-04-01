@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useStudents } from '../../hooks/useStudents';
 import { useAttendance } from '../../hooks/useAttendance';
+import EditTimeCardModal from '../../components/modals/EditTimeCardModal';
 import { fullName, initials, formatDate, dayName, formatTime } from '../../lib/helpers';
+import toast from 'react-hot-toast';
 
 export default function AttendanceLog() {
   const { students } = useStudents();
-  const { logs } = useAttendance();
+  const { logs, update, remove } = useAttendance();
   const [filter, setFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [editEntry, setEditEntry] = useState(null);
 
   let filtered = [...logs];
   if (filter) filtered = filtered.filter(a => a.student_id === filter);
@@ -31,7 +34,7 @@ export default function AttendanceLog() {
         <div className="card-header"><div className="card-title">Attendance Records</div></div>
         <div className="card-body" style={{ padding: 0 }}>
           <table>
-            <thead><tr><th>Student</th><th>Date</th><th>Day</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Program</th></tr></thead>
+            <thead><tr><th>Student</th><th>Date</th><th>Day</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Program</th><th>Actions</th></tr></thead>
             <tbody>
               {filtered.map(a => {
                 const s = students.find(st => st.id === a.student_id);
@@ -50,6 +53,12 @@ export default function AttendanceLog() {
                     <td>{a.clock_out ? formatTime(a.clock_out) : '--'}</td>
                     <td>{a.hours ? Number(a.hours).toFixed(2) : '--'}</td>
                     <td><span className="badge badge-muted">{s.program}</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setEditEntry(a)}>Edit</button>
+                        <button className="btn btn-sm" style={{ background: 'var(--error-light)', color: 'var(--error)' }} onClick={async () => { if (confirm('Delete this time card entry?')) { await remove(a.id); toast.success('Entry deleted'); } }}>Delete</button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -57,6 +66,13 @@ export default function AttendanceLog() {
           </table>
         </div>
       </div>
+
+      <EditTimeCardModal
+        isOpen={!!editEntry}
+        onClose={() => setEditEntry(null)}
+        onSave={async (id, updates) => { await update(id, updates); toast.success('Time card updated'); }}
+        entry={editEntry}
+      />
     </>
   );
 }

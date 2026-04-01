@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { useStudents } from '../../hooks/useStudents';
 import AddStudentModal from '../../components/modals/AddStudentModal';
+import EditStudentModal from '../../components/modals/EditStudentModal';
 import { fullName, initials, inPersonHours, totalHours, formatDate } from '../../lib/helpers';
 import toast from 'react-hot-toast';
 
 export default function StudentRoster() {
-  const { students, create } = useStudents();
+  const { students, create, update, remove } = useStudents();
   const [modalOpen, setModalOpen] = useState(false);
+  const [editStudent, setEditStudent] = useState(null);
 
   async function handleCreate(data) {
     const { error } = await create(data);
     if (!error) toast.success('Student added successfully.');
+  }
+
+  async function handleDelete(s) {
+    if (confirm(`Delete ${fullName(s)}? This will also delete all their attendance, grades, and absence records.`)) {
+      const { error } = await remove(s.id);
+      if (!error) toast.success(`${fullName(s)} deleted.`);
+    }
   }
 
   return (
@@ -23,7 +32,7 @@ export default function StudentRoster() {
         <div className="card-header"><div className="card-title">Student Roster</div></div>
         <div className="card-body" style={{ padding: 0 }}>
           <table>
-            <thead><tr><th>Name</th><th>Program</th><th>Start Date</th><th>In-Person</th><th>Distance Ed</th><th>Total</th><th>Remaining</th><th>Progress</th><th>Kiosk PIN</th></tr></thead>
+            <thead><tr><th>Name</th><th>Program</th><th>Start Date</th><th>In-Person</th><th>Distance Ed</th><th>Total</th><th>Remaining</th><th>Progress</th><th>PIN</th><th>Actions</th></tr></thead>
             <tbody>
               {students.map(s => {
                 const ip = inPersonHours(s);
@@ -48,7 +57,7 @@ export default function StudentRoster() {
                     <td><span style={{ color: 'var(--purple)', fontWeight: 500 }}>{Number(s.de_hours)}</span></td>
                     <td><strong>{total}</strong></td>
                     <td>{left}</td>
-                    <td style={{ minWidth: 100 }}>
+                    <td style={{ minWidth: 80 }}>
                       <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%`, background: color }}></div></div>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>{pct}%</div>
                     </td>
@@ -56,6 +65,12 @@ export default function StudentRoster() {
                       <span style={{ fontFamily: 'monospace', fontSize: 13, background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px', letterSpacing: 2 }}>
                         {s.pin || '----'}
                       </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setEditStudent(s)}>Edit</button>
+                        <button className="btn btn-sm" style={{ background: 'var(--error-light)', color: 'var(--error)' }} onClick={() => handleDelete(s)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -66,6 +81,12 @@ export default function StudentRoster() {
       </div>
 
       <AddStudentModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onCreate={handleCreate} />
+      <EditStudentModal
+        isOpen={!!editStudent}
+        onClose={() => setEditStudent(null)}
+        onSave={async (id, updates) => { await update(id, updates); toast.success('Student updated.'); }}
+        student={editStudent}
+      />
     </>
   );
 }

@@ -23,5 +23,17 @@ export function useAbsences() {
     return { error };
   }
 
-  return { absences, loading, refetch: fetch, create };
+  async function update(id, updates) {
+    const { error } = await supabase.from('absences').update(updates).eq('id', id);
+    if (!error) await fetch();
+    return { error };
+  }
+
+  async function recordDailyAbsences() {
+    const { data, error } = await supabase.rpc('record_daily_absences');
+    if (!error) await fetch();
+    return { data, error };
+  }
+
+  return { absences, loading, refetch: fetch, create, update, recordDailyAbsences };
 }
